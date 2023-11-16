@@ -1,73 +1,52 @@
-const database = require('./database.js')
-const firebird = require('node-firebird')
+const { requestDB } = require('./database.js')
 
 function getProducts(req, res) {
-    firebird.attach(database, (err, db) => {
-        filter = []
-        ssql = 'SELECT * FROM COMPUTERS WHERE ID > 0'
+    var ssql = 'SELECT * FROM COMPUTERS WHERE ID > 0'
+    var filter = []
 
-        if (err) {
-            res.send(err)
-        }
+    if (req.query.id) {
+        ssql += ' AND ID LIKE ?'
+        filter.push('%' + req.query.id + '%')
+    }
 
-        if (req.query.id) {
-            ssql += ' AND ID LIKE ?'
-            filter.push('%' + req.query.id + '%')
-        }
+    if (req.query.name) {
+        ssql += ' AND NAME LIKE ?'
+        filter.push('%' + req.query.name + '%')
+    }
 
-        if (req.query.name) {
-            ssql += ' AND NAME LIKE ?'
-            filter.push('%' + req.query.name + '%')
-        }
-        
-        db.query(ssql, filter, (err, result) => {
-            db.detach()
-
-            if (err) {
-                res.json(err.message)
-            } else {
-                res.json(result)
-            }
-        })
+    requestDB(ssql, filter, (err, result) => {
+        if (err) throw err
+        res.send(result)
     })
 }
 
 function postProduct(req, res) {
-    firebird.attach(database, (err, db) => {
-        if (err) {
-            res.send(err)
-        }
-        
-        db.query(`INSERT INTO COMPUTERS(NAME) VALUES(?) RETURNING ID`, req.query.name, (err, result) => { //fazer um id auto increment //usar req.query ou .param, porque .body gera um valor undefined no banco
-            db.detach()
+    const ssql = 'INSERT INTO COMPUTERS(NAME) VALUES(?) RETURNING ID'
+    const filter = req.query.name
 
-            if (err) {
-                res.json(err.message)
-            } else {
-                res.json({id: result.ID})
-            }
-        })
+    requestDB(ssql, filter, (err, result) => {
+        if (err) throw err
+        res.send('Adicionado')
     })
 }
 
 function patchProduct(req, res) {
+    const ssql = `UPDATE COMPUTERS SET NAME = ? WHERE ID = ${req.query.id}`
+    const filter = req.query.name
+
+    requestDB(ssql, filter, (err, result) => {
+        if (err) throw err
+        res.send('Editado')
+    })
 }
 
 function deleteProduct(req, res) {
-    firebird.attach(database, (err, db) => {
-        if (err) {
-            res.send(err)
-        }
+    const ssql = 'DELETE FROM COMPUTERS WHERE ID = ?'
+    const filter = req.query.id
 
-        db.query('DELETE FROM COMPUTERS WHERE ID = ?', req.query.id, (err, result) => {
-            db.detach()
-
-            if (err) {
-                res.json(err)
-            } else {
-                res.json('Deletado', result)
-            }
-        })
+    requestDB(ssql, filter, (err, result) => {
+        if (err) res.send('Erro ao deletar')
+        res.send('Deletado')
     })
 }
 
