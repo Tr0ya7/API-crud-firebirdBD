@@ -4,5 +4,7 @@ const router = Router()
 
 router.get('/', getProducts)
 router.post('/', postProduct)
+router.patch('/', patchProduct)
+router.delete('/', deleteProduct)
 
 module.exports = router

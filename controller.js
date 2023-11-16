@@ -34,13 +34,11 @@ function getProducts(req, res) {
 
 function postProduct(req, res) {
     firebird.attach(database, (err, db) => {
-        var ssql = 'INSERT INTO COMPUTERS(ID ,NAME) VALUES(?, ?) RETURNING ID'
-
         if (err) {
             res.send(err)
         }
         
-        db.query(ssql, [req.body.name], (err, result) => { //fazer um id auto increment
+        db.query(`INSERT INTO COMPUTERS(NAME) VALUES(?) RETURNING ID`, req.query.name, (err, result) => { //fazer um id auto increment //usar req.query ou .param, porque .body gera um valor undefined no banco
             db.detach()
 
             if (err) {
@@ -52,8 +50,25 @@ function postProduct(req, res) {
     })
 }
 
-function patchProduct(req, res) {}
+function patchProduct(req, res) {
+}
 
-function deleteProduct(req, res) {}
+function deleteProduct(req, res) {
+    firebird.attach(database, (err, db) => {
+        if (err) {
+            res.send(err)
+        }
+
+        db.query('DELETE FROM COMPUTERS WHERE ID = ?', req.query.id, (err, result) => {
+            db.detach()
+
+            if (err) {
+                res.json(err)
+            } else {
+                res.json('Deletado', result)
+            }
+        })
+    })
+}
 
 module.exports = { getProducts, postProduct, patchProduct, deleteProduct }
